@@ -204,10 +204,11 @@ try {
  */
 
 const reservationSchema = new mongoose.Schema({
-userId: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
-carId: { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
-days: { type: Number, required: true },
-totalPrice: { type: Number, required: true },
+  userId:     { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  carId:      { type: mongoose.Schema.Types.ObjectId, ref: 'Car', required: true },
+  days:       { type: Number, required: true },
+  totalPrice: { type: Number, required: true },
+  reservedAt: { type: Date, default: Date.now }
 });
 
 const Reservation = mongoose.model('Reservation', reservationSchema);

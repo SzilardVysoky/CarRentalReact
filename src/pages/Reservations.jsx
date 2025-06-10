@@ -8,6 +8,8 @@ import {
 import { getCars } from '../api/cars';
 import '../App.css';
 
+const ONE_DAY_MS = 24 * 60 * 60 * 1000;
+
 const Reservations = () => {
   const location = useLocation();
 
@@ -47,43 +49,60 @@ const Reservations = () => {
     setSortConfig({ key, direction: dir });
   };
 
-  const sorted = [...reservations]
-    .filter(r => r.carId)
-    .sort((a,b) => {
-      const { key, direction } = sortConfig;
-      if (!key) return 0;
-      let aVal,bVal;
-      switch(key){
-        case 'car':
-          aVal=`${a.carId.brand} ${a.carId.model}`.toLowerCase();
-          bVal=`${b.carId.brand} ${b.carId.model}`.toLowerCase();
-          break;
-        case 'days':
-          aVal=a.days; bVal=b.days; break;
-        case 'pricePerDay':
-          aVal=a.carId.pricePerDay; bVal=b.carId.pricePerDay; break;
-        case 'totalPrice':
-          aVal=a.carId.pricePerDay*a.days; bVal=b.carId.pricePerDay*b.days; break;
-        case 'userId':
-          aVal=a.userId.username.toLowerCase();
-          bVal=b.userId.username.toLowerCase();
-          break;
-        default: return 0;
-      }
-      if (aVal < bVal) return direction==='asc'? -1:1;
-      if (aVal > bVal) return direction==='asc'? 1:-1;
-      return 0;
-    });
+  // Filter out expired, compute remaining ms
+  const now = Date.now();
+  const valid = reservations
+  .map(r => {
+    const reservedAt = new Date(r.reservedAt).getTime();
+    const expiresAt = reservedAt + r.days * ONE_DAY_MS;
+    return { ...r, remaining: expiresAt - Date.now() };
+  })
+  .filter(r => r.remaining > 0 && r.carId);
+
+  // Sort
+  const sorted = [...valid].sort((a, b) => {
+  const { key, direction } = sortConfig;
+  if (!key) return 0;
+
+  let aVal, bVal;
+  switch (key) {
+    case 'car':
+      aVal = `${a.carId.brand} ${a.carId.model}`.toLowerCase();
+      bVal = `${b.carId.brand} ${b.carId.model}`.toLowerCase();
+      break;
+      case 'remaining':
+        aVal = a.remaining;
+        bVal = b.remaining;
+        break;
+      case 'pricePerDay':
+        aVal = a.carId.pricePerDay;
+        bVal = b.carId.pricePerDay;
+        break;
+      case 'totalPrice':
+        aVal = a.carId.pricePerDay * a.days;
+        bVal = b.carId.pricePerDay * b.days;
+        break;
+      case 'userId':
+        aVal = a.userId.username.toLowerCase();
+        bVal = b.userId.username.toLowerCase();
+        break;
+      default:
+        return 0;
+    }
+    if (aVal < bVal) return direction==='asc'? -1:1;
+    if (aVal > bVal) return direction==='asc'? 1:-1;
+    return 0;
+  });
 
   const handleReserve = async e => {
     e.preventDefault();
     setError('');
-    if (!selectedCar||!days) {
+    if (!selectedCar || !days) {
       setError('Please select a car and days.');
       return;
     }
     try {
-      await createReservation({ userId, carId:selectedCar, days:parseInt(days,10) }, token);
+      await createReservation({ userId, carId: selectedCar, days: parseInt(days,10) }, token);
       const updated = role==='admin'
         ? await getAllReservations(token)
         : await getUserReservations(userId, token);
@@ -104,23 +123,26 @@ const Reservations = () => {
       <table className="table">
         <thead>
           <tr>
-            <th onClick={()=>requestSort('car')}>Car {sortConfig.key==='car'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th>
-            <th onClick={()=>requestSort('days')}>Days {sortConfig.key==='days'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th>
+            <th onClick={()=>requestSort('car')}>Car {sortConfig.key==='car'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th><th>Days Reserved</th>
+            <th onClick={()=>requestSort('remaining')}>Remaining {sortConfig.key==='remaining'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th>
             <th onClick={()=>requestSort('pricePerDay')}>Price/Day {sortConfig.key==='pricePerDay'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th>
             <th onClick={()=>requestSort('totalPrice')}>Total {sortConfig.key==='totalPrice'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th>
-            {role==='admin'&&<th onClick={()=>requestSort('userId')}>User {sortConfig.key==='userId'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th>}
+            {role==='admin' && <th onClick={()=>requestSort('userId')}>User {sortConfig.key==='userId'?(sortConfig.direction==='asc'?'↑':'↓'):''}</th>}
           </tr>
         </thead>
         <tbody>
-          {sorted.map(r=>{
-            const rate=r.carId.pricePerDay, total=rate*r.days;
+          {sorted.map(r => {
+            const daysLeft = Math.floor(r.remaining / ONE_DAY_MS);
+            const hoursLeft = Math.floor((r.remaining % ONE_DAY_MS) / (60*60*1000));
+            const minutesLeft = Math.floor((r.remaining % (60 * 60 * 1000)) / (60 * 1000));
             return (
               <tr key={r._id}>
                 <td>{r.carId.brand} {r.carId.model}</td>
                 <td>{r.days}</td>
-                <td>{rate.toFixed(2)}</td>
-                <td>{total.toFixed(2)}</td>
-                {role==='admin'&&<td>{r.userId.username}</td>}
+                <td>{daysLeft}d {hoursLeft}h {minutesLeft}m</td>
+                <td>{r.carId.pricePerDay.toFixed(2)} €</td>
+                <td>{(r.carId.pricePerDay * r.days).toFixed(2)} €</td>
+                {role==='admin' && <td>{r.userId.username}</td>}
               </tr>
             );
           })}
@@ -135,7 +157,7 @@ const Reservations = () => {
               <option value="">-- select --</option>
               {cars.map(c=>(
                 <option key={c._id} value={c._id}>
-                  {c.brand} {c.model} – {c.pricePerDay}€/day
+                  {c.brand} {c.model} – {c.pricePerDay} €/day
                 </option>
               ))}
             </select>

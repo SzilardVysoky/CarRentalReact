@@ -74,7 +74,7 @@ const CarList = () => {
               <tr key={car._id}>
                 <td>{car.brand}</td>
                 <td>{car.year}</td>
-                <td>{car.pricePerDay}</td>
+                <td>{car.pricePerDay.toFixed(2)} €</td>
                 {role==='admin' && <td>{car.reserved? 'No':'Yes'}</td>}
                 <td>
                   {role==='admin'? (
