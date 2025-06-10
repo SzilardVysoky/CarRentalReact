@@ -1,70 +1,212 @@
-# Getting Started with Create React App
+# Car Rental React Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A full-stack car rental web application built with React (frontend) and Node.js/Express + MongoDB (backend). Supports two roles:
 
-## Available Scripts
+- **Admin**: Manage cars (CRUD), view all reservations.  
+- **User**: Browse available cars, make reservations, view your active reservations.
 
-In the project directory, you can run:
+---
 
-### `npm start`
+## Table of Contents
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+1. [Features](#features)  
+2. [Tech Stack](#tech-stack)  
+3. [Prerequisites](#prerequisites)  
+4. [Setup & Installation](#setup--installation)  
+   - [Clone Repository](#clone-repository)  
+   - [Backend Configuration](#backend-configuration)  
+   - [Frontend Configuration](#frontend-configuration)  
+5. [Environment Variables](#environment-variables)  
+6. [Running the Application](#running-the-application)  
+   - [Start MongoDB](#start-mongodb)  
+   - [Start Backend](#start-backend)  
+   - [Start Frontend](#start-frontend)  
+7. [Usage](#usage)  
+   - [Admin](#admin)  
+   - [User](#user)  
+8. [API Endpoints](#api-endpoints)  
+   - [Authentication](#authentication)  
+   - [Cars](#cars)  
+   - [Reservations](#reservations)  
+9. [Roles & Permissions](#roles--permissions)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+---
 
-### `npm test`
+## Features
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+- **Authentication**: Register & Login with JWT stored in `localStorage`.  
+- **Admin Dashboard**:
+  - Create, Read, Update, Delete cars.
+  - View all user reservations.
+- **User Dashboard**:
+  - Browse only available cars.
+  - Create a reservation (days count-down).
+  - View your active reservations with live “days/hours/minutes” remaining.
+- **Responsive UI**: Interactive tables with sorting, hover states.
+- **Form Validation**: Client- and server-side rules for usernames (3–20 chars) and passwords (min 6 chars).
+- **Protected Routes**: Only authenticated users can access car list & reservations; only admins can manage cars.
 
-### `npm run build`
+---
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Tech Stack
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
+- **Frontend**  
+  - React (v19.1.0) with Hooks (`useState`, `useEffect`)  
+  - React Router v6 for navigation  
+  - Axios for HTTP requests  
+  - CSS modules via `App.css` for styling
 
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
+- **Backend**  
+  - Node.js + Express  
+  - MongoDB via Mongoose  
+  - JSON Web Tokens for auth  
+  - bcrypt for password hashing  
+  - CORS enabled for `http://localhost:3000`
 
-### `npm run eject`
+---
 
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
+## Prerequisites
 
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
+- **Node.js** v16+ and npm (installed globally)  
+- **MongoDB** (local service or Docker)  
 
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
+---
 
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
+## Setup & Installation
 
-## Learn More
+### Clone Repository
 
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
+```bash
+git clone <your-repo-url>
+cd <project-folder>
+```
 
-To learn React, check out the [React documentation](https://reactjs.org/).
+### Backend Configuration
 
-### Code Splitting
+1. **Install dependencies**:
+   ```bash
+   npm init -y
+   npm install express mongoose body-parser cors bcrypt jsonwebtoken dotenv
+   ```
+2. **Create backend env file(if needed)** at project root named `.env.server`:
+   ```env
+   MONGO_URI=mongodb://localhost:27017/car_rental_db
+   JWT_SECRET=your_jwt_secret_here
+   PORT=5000
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
+### Frontend Configuration
 
-### Analyzing the Bundle Size
+1. **Install React dependencies**:
+   ```bash
+   npm install
+   npm install react-router-dom axios
+   ```
+2. **Create(if needed)** a `.env` in the root (for CRA):
+   ```env
+   REACT_APP_API_URL=http://localhost:5000/api
+   ```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
+---
 
-### Making a Progressive Web App
+## Environment Variables
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
+- **`.env.server`** (backend)
+  - `MONGO_URI` – MongoDB connection string  
+  - `JWT_SECRET` – secret key for JWT  
+  - `PORT` – backend port (e.g. 5000)
 
-### Advanced Configuration
+- **`.env`** (frontend)
+  - `REACT_APP_API_URL` – e.g. `http://localhost:5000/api`
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
+---
 
-### Deployment
+## Running the Application
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
+### Start MongoDB
 
-### `npm run build` fails to minify
+**Local Windows Service**  
+```powershell
+net start MongoDB
+```
 
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+**Or via Docker**  
+```bash
+docker run -d --name mongodb -p 27017:27017 -v mongo_data:/data/db mongo:latest
+```
+
+### Start Backend
+
+```bash
+node rest-server-cars.js
+```
+
+### Start Frontend
+
+```bash
+npm start
+```
+
+---
+
+## Usage
+
+### Admin
+
+1. **Login** with  
+   ```
+   Username: Admin  
+   Password: 123456
+   ```
+2. Manage cars via **Cars** page.  
+3. View all reservations via **Reservations** page.
+
+### User
+
+1. **Register** at `/register`.  
+2. **Login**.  
+3. Browse and reserve cars via **Cars** page.  
+4. View your active reservations via **Reservations** page.
+
+---
+
+## API Endpoints
+
+### Authentication
+
+| Method | Endpoint            | Body                               | Returns                              | Access  |
+|--------|---------------------|------------------------------------|--------------------------------------|---------|
+| POST   | `/api/auth/register`| `{ username, password }`           | `{ message }`                        | Public  |
+| POST   | `/api/auth/login`   | `{ username, password }`           | `{ token, role, userId }`            | Public  |
+
+### Cars
+
+| Method | Endpoint            | Body                                          | Returns               | Access        |
+|--------|---------------------|-----------------------------------------------|-----------------------|---------------|
+| GET    | `/api/cars`         | —                                             | `[{ Car }]`           | Authenticated |
+| GET    | `/api/cars/:id`     | —                                             | `{ Car }`             | Authenticated |
+| POST   | `/api/cars`         | `{ brand, model, year, pricePerDay, reserved }` | `{ Car }`             | Admin         |
+| PUT    | `/api/cars/:id`     | `{ brand, model, year, pricePerDay, reserved }` | `{ Car }`             | Admin         |
+| DELETE | `/api/cars/:id`     | —                                             | 204 No Content        | Admin         |
+
+### Reservations
+
+| Method | Endpoint                        | Body                          | Returns                       | Access               |
+|--------|---------------------------------|-------------------------------|-------------------------------|----------------------|
+| GET    | `/api/reservations/user/:userId`| —                             | `[{ Reservation }]`           | Authenticated (owner)|
+| GET    | `/api/reservations/all`         | —                             | `[{ Reservation }]`           | Admin                |
+| POST   | `/api/reservations`             | `{ userId, carId, days }`     | `{ Reservation }`             | Authenticated        |
+
+---
+
+## Roles & Permissions
+
+- **Admin**  
+  - Full CRUD on cars  
+  - View all reservations  
+- **User**  
+  - Browse available cars  
+  - Create reservations  
+  - View only active reservations  
+
+---
